@@ -1,0 +1,356 @@
+{
+  "dashboard": {
+    "title": "AWS Zero Trust HR 플랫폼 - SOC 관제 대시보드",
+    "uid": "soc-scene13",
+    "tags": ["soc", "cspm", "ciem", "zero-trust", "ocsf"],
+    "timezone": "browser",
+    "time": { "from": "now-24h", "to": "now" },
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "실시간 보안 위협 (HIGH/CRITICAL Findings)",
+        "description": "Security Lake의 OCSF sh_findings 테이블 기준 - Resolved/Suppressed 제외한 활성 High/Critical 건수. sh_findings는 append-only 이벤트 로그라(같은 finding이 재평가/상태변경 때마다 새 행으로 계속 쌓임) finding_info.uid별 최신 행만 남기고 세야 한다 - 안 그러면 나중에 Suppress한 finding의 '과거 New 상태였던 행'까지 같이 세어져 실제 활성 건수보다 훨씬 부풀려진 값이 나온다.",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 4 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, severity, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0 WHERE severity IN ('High','Critical')) SELECT count(*) as findings FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed')",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "background",
+          "justifyMode": "center",
+          "textMode": "value_and_name",
+          "reduceOptions": { "calcs": ["lastNotNull"] }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "심각도별 Findings 분포 (Findings By Severity)",
+        "description": "AWS 공식 블로그(Detect and respond to security threats in near real-time using Amazon Managed Grafana)가 제공하는 참조 대시보드(SecurityHub-v3.json)의 'Findings By Severity' 패널을 우리 Security Lake OCSF 스키마(finding_info.uid 최신 스냅샷)에 맞게 remap.",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 4, "w": 8, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, severity, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT severity, count(*) as cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY severity ORDER BY cnt DESC",
+            "format": "table"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "cnt", "desc": true }] },
+        "fieldConfig": {
+          "defaults": { "unit": "short" },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "severity" },
+              "properties": [
+                { "id": "mappings", "value": [{ "type": "value", "options": {
+                  "Critical": { "color": "dark-red", "index": 0 },
+                  "High": { "color": "red", "index": 1 },
+                  "Medium": { "color": "orange", "index": 2 },
+                  "Low": { "color": "blue", "index": 3 }
+                } }] },
+                { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 7,
+        "title": "최근 Critical/High Findings Top 10",
+        "description": "AWS 공식 참조 대시보드의 'Top 10 Recent Critical Findings' 패널을 remap - Security Lake sh_findings에서 finding_info.uid별 최신 스냅샷만 남긴 뒤 최근 갱신 순 10건.",
+        "type": "table",
+        "gridPos": { "x": 8, "y": 4, "w": 16, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, finding_info.title as title, severity, status, resource.type as resource_type, time_dt, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0 WHERE severity IN ('High','Critical')) SELECT title, resource_type, severity, time_dt as last_updated FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') ORDER BY time_dt DESC LIMIT 10",
+            "format": "table"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "last_updated", "desc": true }] },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "severity" },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": { "type": "color-background", "mode": "basic" }
+                },
+                {
+                  "id": "mappings",
+                  "value": [{ "type": "value", "options": {
+                    "Critical": { "color": "dark-red" },
+                    "High": { "color": "red" }
+                  } }]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 8,
+        "title": "🔴 Unresolved Drift Alerts (미해결 위험 권한 변경)",
+        "description": "8개 SAML Role은 인라인 정책 하나만 쓰도록 설계돼 있어 관리형 정책이 붙는 경우가 원래 없음 - EventBridge가 AttachRolePolicy를 실시간 감지해서 UNRESOLVED summary 로그를 남김(44-iam-boundary-violation-watch.tf). CloudWatch Logs Insights는 'dedup'을 'stats' 뒤에 못 쓰고 'filter'를 'dedup' 뒤에도 못 쓰는 제약이 있어서(실측으로 확인, 문서화 안 됨), CWLI 쿼리는 'sort @timestamp desc | dedup event_id'로 event_id별 최신 행만 남기는 것까지만 하고, 'UNRESOLVED로 시작하는 행만 남기기'는 Grafana의 filterByValue 트랜스폼이 담당한다. 같은 event_id로 RESOLVED summary가 찍히면(Slack 버튼 클릭) dedup이 그 행을 최신으로 골라서 자동으로 빠진다.",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 7 },
+        "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+            "queryMode": "Logs",
+            "region": "ap-northeast-2",
+            "logGroups": [
+              { "accountId": "123456789012", "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/demo-project/iam-boundary-violations:*", "name": "/demo-project/iam-boundary-violations" }
+            ],
+            "statsGroups": [],
+            "queryString": "fields @timestamp, event_id, summary | sort @timestamp desc | dedup event_id"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "filterByValue",
+            "options": {
+              "type": "include",
+              "match": "any",
+              "filters": [
+                { "fieldName": "summary", "config": { "id": "regex", "options": { "value": "^UNRESOLVED" } } }
+              ]
+            }
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "@timestamp", "desc": true }] },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "summary" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" } },
+                { "id": "mappings", "value": [
+                  { "type": "regex", "options": { "pattern": "^UNRESOLVED", "result": { "color": "dark-red", "index": 0 } } },
+                  { "type": "regex", "options": { "pattern": "^RESOLVED", "result": { "color": "dark-green", "index": 1 } } }
+                ] }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 9,
+        "title": "🟢 Resolved Incident Audit (Slack 조치 완료 이력)",
+        "description": "ciem-key-exception-callback.py가 lock_account_risk/approve_exception_risk 버튼 클릭 시 같은 event_id로 남기는 RESOLVED summary 로그 - 누가/언제/무슨 버튼을 눌러서/어떤 조치를 취했는지 타임라인. 감사 타임라인이라 event_id로 dedup 안 하고 원본 행을 시간순 그대로 보여줌.",
+        "type": "table",
+        "gridPos": { "x": 12, "y": 10, "w": 12, "h": 7 },
+        "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+            "queryMode": "Logs",
+            "region": "ap-northeast-2",
+            "logGroups": [
+              { "accountId": "123456789012", "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/demo-project/iam-boundary-violations:*", "name": "/demo-project/iam-boundary-violations" }
+            ],
+            "statsGroups": [],
+            "queryString": "fields @timestamp, event_id, summary | filter summary like /^RESOLVED/ | sort @timestamp desc | limit 50"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "@timestamp", "desc": true }] },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "summary" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" } },
+                { "id": "thresholds", "value": { "mode": "absolute", "steps": [ { "color": "dark-green", "value": null } ] } }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 2,
+        "title": "VPC Flow Logs - REJECT 트래픽 (네트워크 이상 징후)",
+        "description": "Security Lake의 OCSF vpc_flow 테이블 - action=Denied 상위 발신 IP 20개. 원래 barchart 패널이었는데 grafana-athena-datasource가 반환하는 프레임의 preferredVisualisationType이 'table'이라 barchart 패널 프론트엔드가 이를 안 그리고 No Data로 표시함 - table 패널로 바꿔서 해결.",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 17, "w": 12, "h": 8 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "SELECT src_endpoint.ip as src_ip, count(*) as rejected_count FROM amazon_security_lake_table_ap_northeast_2_vpc_flow_2_0 WHERE action = 'Denied' GROUP BY src_endpoint.ip ORDER BY rejected_count DESC LIMIT 20",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "sortBy": [{ "displayName": "rejected_count", "desc": true }]
+        },
+        "fieldConfig": {
+          "defaults": { "unit": "short" },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "rejected_count" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "color": "green", "value": null },
+                      { "color": "orange", "value": 200 },
+                      { "color": "red", "value": 1000 }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "title": "IAM API 호출 타임라인 (이상 동작 감지)",
+        "description": "CloudTrail 기반 IAM API 호출 최근 50건 - errorcode 컬럼이 채워진 행(권한 거부 등)은 붉게 강조",
+        "type": "table",
+        "gridPos": { "x": 12, "y": 17, "w": 12, "h": 8 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "default", "region": "ap-northeast-2" },
+            "rawSQL": "SELECT eventtime, eventname, useridentity.arn as caller, sourceipaddress, errorcode FROM demo_project_cloudtrail_logs WHERE eventsource = 'iam.amazonaws.com' ORDER BY eventtime DESC LIMIT 50",
+            "format": "table"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "eventtime", "desc": true }] },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "errorcode" },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": { "type": "color-background", "mode": "basic" }
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "color": "transparent", "value": null }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 4,
+        "title": "RDS PII 마스킹 로그 (CloudWatch Data Protection)",
+        "description": "employees 테이블을 건드리는 pgAudit 로그 - CloudWatch Data Protection Policy로 리터럴 PII는 이미 마스킹된 상태",
+        "type": "logs",
+        "gridPos": { "x": 0, "y": 25, "w": 12, "h": 8 },
+        "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+            "queryMode": "Logs",
+            "region": "ap-northeast-2",
+            "logGroups": [
+              { "accountId": "123456789012", "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/rds/instance/demo-project-dev-postgres-db/postgresql:*", "name": "/aws/rds/instance/demo-project-dev-postgres-db/postgresql" }
+            ],
+            "statsGroups": [],
+            "queryString": "fields @timestamp, @message | filter @message like /employees/ | sort @timestamp desc | limit 100"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": false,
+          "showCommonLabels": false,
+          "wrapLogMessage": true,
+          "prettifyLogMessage": true,
+          "enableLogDetails": true,
+          "dedupStrategy": "none",
+          "sortOrder": "Descending"
+        }
+      },
+      {
+        "id": 5,
+        "title": "EKS Audit 로그 (kubectl 감사 추적)",
+        "description": "EKS 컨트롤플레인 Audit 로그 - 누가/언제/어떤 verb로 어느 네임스페이스·리소스를 건드렸는지",
+        "type": "logs",
+        "gridPos": { "x": 12, "y": 25, "w": 12, "h": 8 },
+        "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+            "queryMode": "Logs",
+            "region": "ap-northeast-2",
+            "logGroups": [
+              { "accountId": "123456789012", "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/eks/demo-project-dev-cluster/cluster:*", "name": "/aws/eks/demo-project-dev-cluster/cluster" }
+            ],
+            "statsGroups": [],
+            "queryString": "fields @timestamp, user.username as k8s_user, verb, objectRef.namespace as namespace, objectRef.name as resource | sort @timestamp desc | limit 100"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": false,
+          "showCommonLabels": false,
+          "wrapLogMessage": true,
+          "prettifyLogMessage": true,
+          "enableLogDetails": true,
+          "dedupStrategy": "none",
+          "sortOrder": "Descending"
+        }
+      }
+    ],
+    "schemaVersion": 39,
+    "version": 2
+  },
+  "overwrite": true
+}

@@ -1,0 +1,283 @@
+{
+  "dashboard": {
+    "title": "AWS Security Hub - 표준 관제 대시보드 (Standard)",
+    "uid": "sechub-standard",
+    "tags": ["security-hub", "cspm", "standard", "ocsf"],
+    "timezone": "browser",
+    "time": { "from": "now-7d", "to": "now" },
+    "refresh": "30s",
+    "description": "AWS 공식 블로그(Detect and respond to security threats in near real-time using Amazon Managed Grafana)가 제공하는 참조 대시보드(SecurityHub-v3.json)의 패널 구성을 우리 Security Lake OCSF 'sh_findings' 테이블에 맞게 remap하고, gauge/bargauge/piechart/timeseries 등 그래프 계열 패널로 다시 구성한 버전. sh_findings는 append-only 이벤트 로그라 모든 쿼리가 finding_info.uid별 최신 스냅샷(ROW_NUMBER() OVER PARTITION BY)만 남기고 집계한다. 시계열 패널은 grafana-athena-datasource target에 format:'timeseries'를 쓰고 날짜 컬럼을 'time'으로 alias해야 preferredVisualisationType이 'graph'로 정상 인식된다(format:'table'로 두면 barchart 패널이 No Data로 렌더링되는 문제를 이전에 겪음 - docs/grafana/grafana-soc-dashboard.json Panel2 참고).",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Findings",
+        "description": "활성(Resolved/Suppressed 제외) finding 총 건수.",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT count(*) as total_findings FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed')",
+            "format": "table"
+          }
+        ],
+        "options": { "graphMode": "none", "colorMode": "value", "justifyMode": "center", "textMode": "value_and_name", "reduceOptions": { "calcs": ["lastNotNull"] } },
+        "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 } }
+      },
+      {
+        "id": 2,
+        "title": "Critical Findings (지금)",
+        "description": "현재 활성 Critical 등급 finding 수 - 0보다 크면 빨간 배경.",
+        "type": "stat",
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, severity, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT count(*) as critical_now FROM latest WHERE rn = 1 AND severity = 'Critical' AND status NOT IN ('Resolved','Suppressed')",
+            "format": "table"
+          }
+        ],
+        "options": { "graphMode": "none", "colorMode": "background", "justifyMode": "center", "textMode": "value_and_name", "reduceOptions": { "calcs": ["lastNotNull"] } },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none", "decimals": 0,
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "컴플라이언스 Pass Rate",
+        "description": "AWS Config 기반 컴플라이언스 체크 중 PASSED 비율.",
+        "type": "gauge",
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, compliance.status as compliance_status, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0), cur AS (SELECT compliance_status FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed')) SELECT round(100.0 * sum(CASE WHEN compliance_status = 'PASSED' THEN 1 ELSE 0 END) / count(*), 1) as pass_rate FROM cur",
+            "format": "table"
+          }
+        ],
+        "options": { "orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true, "reduceOptions": { "calcs": ["lastNotNull"] } },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent", "min": 0, "max": 100,
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 50 }, { "color": "green", "value": 80 } ] }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Total Providers",
+        "description": "활성 finding을 만들어낸 서로 다른 보안 제품 수(Security Hub/GuardDuty/Config 등).",
+        "type": "stat",
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, metadata.product.name as product_name, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT count(distinct product_name) as total_providers FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed')",
+            "format": "table"
+          }
+        ],
+        "options": { "graphMode": "none", "colorMode": "value", "justifyMode": "center", "textMode": "value_and_name", "reduceOptions": { "calcs": ["lastNotNull"] } },
+        "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 } }
+      },
+      {
+        "id": 5,
+        "title": "Findings By Severity",
+        "description": "심각도별 활성 finding 분포 (가로 막대 게이지).",
+        "type": "bargauge",
+        "gridPos": { "x": 0, "y": 4, "w": 8, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, severity, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT severity, count(*) as cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY severity ORDER BY cnt DESC",
+            "format": "table"
+          }
+        ],
+        "options": { "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "values": true, "fields": "/cnt/" } },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 5 }, { "color": "red", "value": 20 } ] }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Findings By Compliance Status",
+        "description": "AWS Config 기반 컴플라이언스 체크 결과 분포 (PASSED/FAILED/WARNING/NOT_AVAILABLE).",
+        "type": "piechart",
+        "gridPos": { "x": 8, "y": 4, "w": 8, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, compliance.status as compliance_status, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT compliance_status, count(*) as cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY compliance_status ORDER BY cnt DESC",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "pieType": "donut",
+          "displayLabels": ["name", "percent"],
+          "legend": { "displayMode": "list", "placement": "right", "values": ["value"] },
+          "reduceOptions": { "calcs": ["lastNotNull"], "values": true, "fields": "/cnt/" }
+        },
+        "fieldConfig": { "defaults": { "unit": "short" } }
+      },
+      {
+        "id": 7,
+        "title": "Findings by Type",
+        "description": "finding_info.types(OCSF 분류 태그, 배열)를 UNNEST해서 집계.",
+        "type": "piechart",
+        "gridPos": { "x": 16, "y": 4, "w": 8, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, finding_info.types as types, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0), cur AS (SELECT uid, types FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed')) SELECT t as finding_type, count(*) as cnt FROM cur CROSS JOIN UNNEST(types) as u(t) GROUP BY t ORDER BY cnt DESC LIMIT 10",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "pieType": "donut",
+          "displayLabels": ["name", "percent"],
+          "legend": { "displayMode": "list", "placement": "right", "values": ["value"] },
+          "reduceOptions": { "calcs": ["lastNotNull"], "values": true, "fields": "/cnt/" }
+        },
+        "fieldConfig": { "defaults": { "unit": "short" } }
+      },
+      {
+        "id": 8,
+        "title": "Findings by Resource Type",
+        "description": "AWS 리소스 타입별(AwsEc2Instance, AwsIamRole 등) 활성 finding 분포 상위 15개.",
+        "type": "bargauge",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, resource.type as resource_type, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT resource_type, count(*) as cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY resource_type ORDER BY cnt DESC LIMIT 15",
+            "format": "table"
+          }
+        ],
+        "options": { "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "values": true, "fields": "/cnt/" } },
+        "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "continuous-BlPu" } } }
+      },
+      {
+        "id": 9,
+        "title": "Findings by Account ID",
+        "description": "AWS 계정별 활성 finding 건수(현재는 단일 계정 데모라 1행만 나올 수 있음).",
+        "type": "table",
+        "gridPos": { "x": 12, "y": 10, "w": 12, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, accountid, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT accountid, count(*) as cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY accountid ORDER BY cnt DESC",
+            "format": "table"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "cnt", "desc": true }] },
+        "fieldConfig": { "defaults": { "unit": "short" } }
+      },
+      {
+        "id": 10,
+        "title": "Findings By Provider Over Time",
+        "description": "제품(Security Hub/GuardDuty/Config)별 날짜별 활성 finding 건수 추이.",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, metadata.product.name as product_name, cast(time_dt as date) as d, status, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT d as \"time\", product_name, count(*) as cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY d, product_name ORDER BY d",
+            "format": "timeseries"
+          }
+        ],
+        "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+        "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 60 } } }
+      },
+      {
+        "id": 11,
+        "title": "Critical Findings Count by Date",
+        "description": "날짜별 활성 Critical finding 건수 추이.",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, status, cast(time_dt as date) as d, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0 WHERE severity = 'Critical') SELECT d as \"time\", count(*) as critical_cnt FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') GROUP BY d ORDER BY d",
+            "format": "timeseries"
+          }
+        ],
+        "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+        "fieldConfig": { "defaults": { "unit": "short", "color": { "fixedColor": "red", "mode": "fixed" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 } } }
+      },
+      {
+        "id": 12,
+        "title": "Top 10 Recent Critical/High Findings",
+        "description": "최근 갱신된 Critical/High 활성 finding 10건 (원본은 Critical만이었으나 데모 계정 특성상 표본이 너무 적어 High까지 포함).",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 22, "w": 24, "h": 6 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": { "catalog": "AwsDataCatalog", "database": "amazon_security_lake_glue_db_ap_northeast_2", "region": "ap-northeast-2" },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, finding_info.title as title, severity, status, resource.type as resource_type, time_dt, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0 WHERE severity IN ('High','Critical')) SELECT title, resource_type, severity, time_dt as last_updated FROM latest WHERE rn = 1 AND status NOT IN ('Resolved','Suppressed') ORDER BY time_dt DESC LIMIT 10",
+            "format": "table"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "last_updated", "desc": true }] },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "severity" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" } },
+                { "id": "mappings", "value": [{ "type": "value", "options": {
+                  "Critical": { "color": "dark-red" },
+                  "High": { "color": "red" }
+                } }] }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "schemaVersion": 39,
+    "version": 2
+  },
+  "overwrite": true
+}

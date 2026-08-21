@@ -1,0 +1,959 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Tier 3 - Target Group Detailed Breakdown: Healthy/UnHealthy Hosts, Latency percentiles, HTTP Target status codes, Connection/TLS errors (100% AWS CloudWatch)",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier1"
+        ],
+        "targetBlank": false,
+        "title": "Tier 1 Overview",
+        "type": "dashboards"
+      },
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier2"
+        ],
+        "targetBlank": false,
+        "title": "Tier 2 Dashboards",
+        "type": "dashboards"
+      }
+    ],
+    "liveNow": false,
+    "panels": [
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 100,
+        "title": "🎯 Target Group Health & Availability Status",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "id": 101,
+        "title": "Healthy Host Count",
+        "type": "stat",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "대상 타겟 그룹의 정상(Healthy) 호스트 수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "#52c41a",
+              "mode": "fixed"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "auto"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "Healthy Hosts",
+            "metricName": "HealthyHostCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Average",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "id": 102,
+        "title": "UnHealthy Host Count",
+        "type": "stat",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "대상 타겟 그룹의 비정상(UnHealthy) 호스트 수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "auto"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "UnHealthy Hosts",
+            "metricName": "UnHealthyHostCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Average",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "id": 103,
+        "title": "Request Count per Target",
+        "type": "stat",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "타겟 인스턴스당 평균 요청 처리 건수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "#1890ff",
+              "mode": "fixed"
+            },
+            "mappings": [],
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "mean"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "auto"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "Req/Target",
+            "metricName": "RequestCountPerTarget",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        },
+        "id": 104,
+        "title": "Target Connection & TLS Errors",
+        "type": "stat",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "타겟 연결 오류 및 TLS 협상 에러 발생 건수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#faad14",
+                  "value": 1
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "sum"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "auto"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "Conn Errors",
+            "metricName": "TargetConnectionErrorCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m2",
+            "label": "TLS Errors",
+            "metricName": "TargetTLSNegotiationErrorCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 7
+        },
+        "id": 200,
+        "title": "⏱️ Target Response Time (Latency Distribution)",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "id": 201,
+        "title": "Target Response Time Percentiles (p50 / p90 / p95 / p99)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "타겟 응답 시간 백분위수 (초 단위)",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#faad14",
+                  "value": 0.5
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 1.5
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "p50 Latency"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "p90 Latency"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#1890ff",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "p95 Latency"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#faad14",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "p99 Latency"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#e02f44",
+                    "mode": "fixed"
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 3
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "p50 Latency",
+            "metricName": "TargetResponseTime",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "p50",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m2",
+            "label": "p90 Latency",
+            "metricName": "TargetResponseTime",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "p90",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m3",
+            "label": "p95 Latency",
+            "metricName": "TargetResponseTime",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "C",
+            "region": "${region}",
+            "statistic": "p95",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m4",
+            "label": "p99 Latency",
+            "metricName": "TargetResponseTime",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "D",
+            "region": "${region}",
+            "statistic": "p99",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "id": 202,
+        "title": "Target HTTP Status Code Counts (2XX / 3XX / 4XX / 5XX)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "타겟 응답 HTTP 상태코드별 시계열 분포",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "normal"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "HTTP 2XX"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "HTTP 3XX"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#1890ff",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "HTTP 4XX"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#faad14",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "HTTP 5XX"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#e02f44",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "sum",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "HTTP 2XX",
+            "metricName": "HTTPCode_Target_2XX_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m2",
+            "label": "HTTP 3XX",
+            "metricName": "HTTPCode_Target_3XX_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m3",
+            "label": "HTTP 4XX",
+            "metricName": "HTTPCode_Target_4XX_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "C",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m4",
+            "label": "HTTP 5XX",
+            "metricName": "HTTPCode_Target_5XX_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "D",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": true
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [
+      "tier3",
+      "drilldown",
+      "alb",
+      "targetgroup",
+      "cloudwatch"
+    ],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": true,
+            "text": "dev",
+            "value": "dev"
+          },
+          "hide": 0,
+          "label": "Environment",
+          "name": "env",
+          "options": [
+            {
+              "selected": true,
+              "text": "dev",
+              "value": "dev"
+            },
+            {
+              "selected": false,
+              "text": "prod",
+              "value": "prod"
+            }
+          ],
+          "query": "dev, prod",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "ap-northeast-2",
+            "value": "ap-northeast-2"
+          },
+          "hide": 0,
+          "label": "Region",
+          "name": "region",
+          "options": [
+            {
+              "selected": true,
+              "text": "ap-northeast-2",
+              "value": "ap-northeast-2"
+            }
+          ],
+          "query": "ap-northeast-2",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "CloudWatch",
+            "value": "cloudwatch-default"
+          },
+          "hide": 2,
+          "includeAll": false,
+          "label": "CloudWatch DS",
+          "multi": false,
+          "name": "datasource_cw",
+          "options": [],
+          "query": "cloudwatch",
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "type": "datasource"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "timezone": "browser",
+    "title": "[T3] Detail - Target Group Breakdown",
+    "uid": "tier3-tg-detail",
+    "version": 5
+  },
+  "overwrite": true
+}

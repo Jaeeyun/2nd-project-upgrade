@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hr-db-migrate
+  namespace: hr-backend
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo-project-dev-backend-repo:hr-service-latest
+          imagePullPolicy: Always
+          command: ["python", "migrate.py"]
+          envFrom:
+            - configMapRef:
+                name: hr-system-config
+            - secretRef:
+                name: hr-db-credentials

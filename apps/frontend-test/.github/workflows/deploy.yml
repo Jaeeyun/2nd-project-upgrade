@@ -1,0 +1,112 @@
+name: Deploy frontend-test (Keyless OIDC)
+
+# Scene 12 증적용 워크플로 - GitHub Actions가 정적 AWS 키 없이 OIDC로
+# demo-project-dev-github-ci-role을 assume해서 ECR push + EKS 배포까지
+# 하는 걸 보여준다(ADR-006). main 브랜치의 frontend-test/** 변경 시에만
+# 트리거되고, workflow_dispatch로 수동 재실행도 가능하다(멱등 - 같은 커밋을
+# 여러 번 재실행해도 매번 성공해야 함).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend-test/**"
+      - ".github/workflows/deploy-frontend-test.yml"
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: demo-project-dev-frontend-test-repo
+  EKS_CLUSTER_NAME: demo-project-dev-cluster
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC (no static keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/demo-project-dev-github-ci-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image (SHA+run_id 태그 - IMMUTABLE 리포지토리라 :latest 재사용 불가)
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+        run: |
+          # run_id까지 붙이는 이유: 같은 커밋을 workflow_dispatch로 재실행(촬영 NG 재시도 등)해도
+          # 태그가 매번 달라야 IMMUTABLE 리포지토리에 push가 막히지 않는다(멱등성 요구사항).
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}-${{ github.run_id }}"
+          docker build -t "$IMAGE_URI" frontend-test
+          docker push "$IMAGE_URI"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      # EKS API 서버 퍼블릭 엔드포인트는 관리자 CIDR로만 열려 있어(keycloak_admin_cidr류
+      # 정책과 동일한 이유), GitHub 소유의 매번 바뀌는 러너 IP는 애초에 못 들어간다 -
+      # 그렇다고 러너 IP 전체를 허용목록에 추가하는 건 이 프로젝트의 IP 제한 원칙에
+      # 정면으로 어긋난다. 대신 VPC 안에 이미 있는 Keycloak EC2에 SSM RunCommand로
+      # kubectl을 대신 실행시킨다 - 22-cicd-oidc.tf의 github_ci 베이스라인 권한에
+      # ssm:SendCommand/GetCommandInvocation이 원래부터 포함돼 있던 이유가 이것이었다.
+      # 실행 결과는 SSM 명령 기록 자체가 감사 추적이 된다(Scene 12의 "SSM 터미널
+      # 실시간 감사 로그"와 동일한 경로, ADR-002 결정 5).
+      - name: Deploy via SSM RunCommand (Keycloak EC2 - EKS 퍼블릭 엔드포인트 IP 제한 우회 없이 배포)
+        env:
+          IMAGE_URI: ${{ steps.build.outputs.image_uri }}
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=demo-project-dev-keycloak-poc" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+
+          MANIFEST=$(sed "s|\${IMAGE_URI}|$IMAGE_URI|g" frontend-test/k8s/deployment.yaml)
+
+          cat > /tmp/remote-deploy.sh <<REMOTE
+          set -e
+          if ! command -v kubectl >/dev/null 2>&1; then
+            curl -sL "https://dl.k8s.io/release/\$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
+            chmod +x /usr/local/bin/kubectl
+          fi
+          # SSM RunCommand 셸 환경은 \$HOME이 kubectl/aws-cli가 기대하는 값과
+          # 다를 수 있어(둘의 홈 디렉터리 해석 방식이 다름), 기본 경로에 암묵적으로
+          # 의존하지 않고 매번 명시적인 --kubeconfig 경로를 쓴다.
+          export KUBECONFIG=/tmp/frontend-test-kubeconfig
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION" --kubeconfig "\$KUBECONFIG"
+          cat > /tmp/frontend-test-deploy.yaml <<'MANIFEST_EOF'
+          $MANIFEST
+          MANIFEST_EOF
+          kubectl --kubeconfig "\$KUBECONFIG" apply -f /tmp/frontend-test-deploy.yaml
+          kubectl --kubeconfig "\$KUBECONFIG" rollout status deployment/frontend-test -n frontend-test --timeout=180s
+          REMOTE
+
+          B64=$(base64 -w0 /tmp/remote-deploy.sh)
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[\"echo $B64 | base64 -d | bash\"]" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM CommandId: $CMD_ID (instance: $INSTANCE_ID)"
+
+          for i in $(seq 1 36); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>/dev/null || echo "Pending")
+            echo "  [$i/36] status=$STATUS"
+            case "$STATUS" in
+              Success) break ;;
+              Failed|Cancelled|TimedOut)
+                aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query '{Stdout:StandardOutputContent,Stderr:StandardErrorContent}' --output json
+                exit 1 ;;
+            esac
+            sleep 5
+          done
+          if [ "$STATUS" != "Success" ]; then echo "timed out waiting for SSM command"; exit 1; fi
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+
+      - name: Verify AWS identity used (no static keys - audit trail)
+        run: aws sts get-caller-identity

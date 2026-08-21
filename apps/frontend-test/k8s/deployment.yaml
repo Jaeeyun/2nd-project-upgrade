@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-test
+  namespace: frontend-test
+  labels:
+    app: frontend-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-test
+  template:
+    metadata:
+      labels:
+        app: frontend-test
+    spec:
+      containers:
+        - name: frontend-test
+          image: ${IMAGE_URI}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-test
+  namespace: frontend-test
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: frontend-test

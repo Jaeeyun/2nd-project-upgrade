@@ -1,0 +1,107 @@
+{
+  "dashboard": {
+    "title": "EKS Log Dashboard (CloudWatch Insights)",
+    "uid": "eks-logs-dashboard",
+    "schemaVersion": 38,
+    "tags": [
+      "kubernetes",
+      "logs",
+      "aws"
+    ],
+    "timezone": "browser",
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Log Volume (Time Series)",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "queryMode": "Logs",
+            "region": "ap-northeast-2",
+            "expression": "fields @timestamp, @message\n| stats count(*) as LogCount by bin(5m)",
+            "logGroupNames": [
+              "/aws/eks/demo-project-dev-cluster/cluster"
+            ],
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          },
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none"
+            },
+            "color": {
+              "mode": "palette-classic"
+            }
+          },
+          "overrides": []
+        }
+      },
+      {
+        "type": "logs",
+        "title": "Raw Log Data",
+        "gridPos": {
+          "h": 12,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "queryMode": "Logs",
+            "region": "ap-northeast-2",
+            "expression": "fields @timestamp, @logStream, @message\n| filter @message like /(?i)(WARN|ERROR|EXCEPTION|FAIL|FATAL)/\n| sort @timestamp desc\n| limit 100",
+            "logGroupNames": [
+              "/aws/eks/demo-project-dev-cluster/cluster"
+            ],
+            "refId": "B"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": false,
+          "showCommonLabels": false,
+          "wrapLogMessage": true,
+          "sortOrder": "Descending"
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}

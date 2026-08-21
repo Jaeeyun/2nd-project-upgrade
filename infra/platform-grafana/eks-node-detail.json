@@ -1,0 +1,1040 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Tier 3 - EKS Cluster & Worker Node Detailed Breakdown: Control Plane API verb breakdown, Scheduler queues, Worker Node CPU/Disk/Network metrics (100% AWS CloudWatch)",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier1"
+        ],
+        "targetBlank": false,
+        "title": "Tier 1 Overview",
+        "type": "dashboards"
+      },
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier2"
+        ],
+        "targetBlank": false,
+        "title": "Tier 2 Dashboards",
+        "type": "dashboards"
+      }
+    ],
+    "liveNow": false,
+    "panels": [
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 100,
+        "title": "☸️ EKS Control Plane Deep-Dive (AWS/EKS)",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 1
+        },
+        "id": 101,
+        "title": "API Server Requests by HTTP Verb (GET / POST / PUT / LIST)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "API 서버 요청 수의 HTTP Verb별 세부 추이",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "normal"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m1",
+            "label": "GET Requests",
+            "metricName": "apiserver_request_total_GET",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m2",
+            "label": "POST Requests",
+            "metricName": "apiserver_request_total_POST",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m3",
+            "label": "PUT Requests",
+            "metricName": "apiserver_request_total_PUT",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "C",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m4",
+            "label": "LIST Requests",
+            "metricName": "apiserver_request_total_LIST",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "D",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 1
+        },
+        "id": 102,
+        "title": "API Server Request Duration (p90 / p99 Latency)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "EKS API 서버 응답 지연 시간(초)",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#faad14",
+                  "value": 0.5
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m1",
+            "label": "GET Latency p90",
+            "metricName": "apiserver_request_duration_seconds_GET_P90",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Average",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m2",
+            "label": "GET Latency p99",
+            "metricName": "apiserver_request_duration_seconds_GET_P99",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Average",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m3",
+            "label": "POST Latency p99",
+            "metricName": "apiserver_request_duration_seconds_POST_P99",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "C",
+            "region": "${region}",
+            "statistic": "Average",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 1
+        },
+        "id": 103,
+        "title": "Scheduler Queues & Pod Placement Attempts",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "Kube-Scheduler 대기 큐 및 스케줄링 성공/실패 시도 횟수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Scheduled Attempts"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Unschedulable Pods"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#e02f44",
+                    "mode": "fixed"
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 3
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m1",
+            "label": "Scheduled Attempts",
+            "metricName": "scheduler_schedule_attempts_SCHEDULED",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m2",
+            "label": "Unschedulable Pods",
+            "metricName": "scheduler_pending_pods_UNSCHEDULABLE",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Maximum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "ClusterName": "*"
+            },
+            "id": "m3",
+            "label": "ActiveQ Pods",
+            "metricName": "scheduler_pending_pods_ACTIVE",
+            "namespace": "AWS/EKS",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "C",
+            "region": "${region}",
+            "statistic": "Maximum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 9
+        },
+        "id": 200,
+        "title": "💻 EKS Worker Node Deep-Dive (AWS/EC2)",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 10
+        },
+        "id": 201,
+        "title": "Worker Node CPU Utilization (%)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "선택된 EC2 워커 노드의 CPU 사용률",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#faad14",
+                  "value": 75
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 90
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m1",
+            "label": "CPU: {{InstanceId}}",
+            "metricName": "CPUUtilization",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Average",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 10
+        },
+        "id": 202,
+        "title": "Worker Node Network Bandwidth (Bytes In / Out)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "선택된 EC2 워커 노드의 네트워크 송수신 대역폭",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "Bytes / sec",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "unit": "Bps"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Network In (Bytes/s)"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Network Out (Bytes/s)"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#1890ff",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m1",
+            "metricName": "NetworkIn",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m2",
+            "metricName": "NetworkOut",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 10
+        },
+        "id": 203,
+        "title": "Worker Node EBS Disk Throughput (Read / Write)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "워커 노드 EBS 볼륨 디스크 읽기/쓰기 바이트 처리량",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "Bytes / sec",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "unit": "Bps"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "EBS Read (Bytes/s)"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "EBS Write (Bytes/s)"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#722ed1",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m1",
+            "metricName": "EBSReadBytes",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m2",
+            "metricName": "EBSWriteBytes",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "metricEditorMode": 0,
+            "metricQueryType": 0,
+            "matchExact": false
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [
+      "tier3",
+      "drilldown",
+      "eks",
+      "ec2",
+      "node",
+      "cloudwatch"
+    ],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": true,
+            "text": "dev",
+            "value": "dev"
+          },
+          "hide": 0,
+          "label": "Environment",
+          "name": "env",
+          "options": [
+            {
+              "selected": true,
+              "text": "dev",
+              "value": "dev"
+            },
+            {
+              "selected": false,
+              "text": "prod",
+              "value": "prod"
+            }
+          ],
+          "query": "dev, prod",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "ap-northeast-2",
+            "value": "ap-northeast-2"
+          },
+          "hide": 0,
+          "label": "Region",
+          "name": "region",
+          "options": [
+            {
+              "selected": true,
+              "text": "ap-northeast-2",
+              "value": "ap-northeast-2"
+            }
+          ],
+          "query": "ap-northeast-2",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "CloudWatch",
+            "value": "cloudwatch-default"
+          },
+          "hide": 2,
+          "includeAll": false,
+          "label": "CloudWatch DS",
+          "multi": false,
+          "name": "datasource_cw",
+          "options": [],
+          "query": "cloudwatch",
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "type": "datasource"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "timezone": "browser",
+    "title": "[T3] Detail - EKS Cluster & Node Breakdown",
+    "uid": "tier3-eks-node-detail",
+    "version": 3
+  },
+  "overwrite": true
+}

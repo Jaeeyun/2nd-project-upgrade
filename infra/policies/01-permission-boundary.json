@@ -1,0 +1,48 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowBroadServiceAccessAsUpperBound",
+      "Effect": "Allow",
+      "NotAction": [
+        "iam:*",
+        "organizations:*",
+        "account:*",
+        "aws-portal:*",
+        "billing:*",
+        "sts:AssumeRole",
+        "sso:*",
+        "sso-directory:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowAssumeRoleWithSAMLOnly",
+      "Effect": "Allow",
+      "Action": "sts:AssumeRoleWithSAML",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitDenyStaticCredentialCreation",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreateAccessKey",
+        "iam:CreateUser",
+        "iam:CreateLoginProfile",
+        "iam:UpdateAccessKey"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyBoundaryPolicyTampering",
+      "Effect": "Deny",
+      "Action": [
+        "iam:DeleteRolePermissionsBoundary",
+        "iam:PutRolePermissionsBoundary",
+        "iam:DeleteUserPermissionsBoundary",
+        "iam:PutUserPermissionsBoundary"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

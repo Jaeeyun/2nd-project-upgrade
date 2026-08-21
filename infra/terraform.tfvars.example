@@ -1,0 +1,82 @@
+# 이 파일을 복사해서 terraform.tfvars로 저장하고 실제 값을 채우세요.
+# terraform.tfvars는 .gitignore에 반드시 포함시켜서 Git에 올라가지 않게 하세요.
+
+db_password = "여기에_강력한_비밀번호_입력"
+
+# ADR-004: 예산 초과(80%) / 비용 이상 징후 알림을 받을 이메일 (필수)
+alert_email = "여기에_알림받을_이메일_입력"
+
+# Security Hub Account.1(계정 보안 연락처) 대응 - AWS 계정 Alternate Contact(SECURITY).
+# 기본값이 없는 필수 변수라, 안 채우면 terraform apply 자체가 안 됩니다.
+security_contact_name  = "여기에_보안_연락처_이름_입력"
+security_contact_phone = "여기에_보안_연락처_전화번호_입력"
+
+# 필요하면 다른 변수도 여기서 덮어쓸 수 있습니다 (기본값 그대로 써도 무방)
+# aws_region   = "ap-northeast-2"
+# project_name = "demo-project"
+# environment  = "dev"
+
+# (선택) kubectl 접근을 본인 IP로만 제한하고 싶다면 주석 해제 후 본인 IP로 채우세요.
+# 안 채우면 기본값(전체 허용)이 적용됩니다. 이 값은 절대 기본 코드에 하드코딩하지 않습니다.
+# eks_public_access_cidrs = ["여기에_본인_공인IP/32"]
+
+# (선택) 월 예산 알림 기준 금액(USD). 기본값 100.
+# monthly_budget_amount = "100"
+
+# (선택) CIS AWS Foundations Benchmark를 Security Hub에서 FSBP와 함께 켜고 싶다면
+# true로. 기본은 false(FSBP만 기본 활성화 - ADR-004 결정 9).
+# enable_cis_benchmark = true
+
+# --- Keycloak PoC (ADR-001/002) ---
+# 반드시 채우세요: terraform apply를 실행하는 머신의 공인 IP를 포함해야 합니다.
+# (Keycloak 443, SG ingress + null_resource.wait_for_keycloak의 폴링에 모두 쓰임)
+keycloak_admin_cidr = ["여기에_본인_공인IP/32"]
+
+# 반드시 채우세요: security-auditor Role을 assume할 수 있는 CIDR (보통 위와 동일)
+security_auditor_allowed_cidrs = ["여기에_본인_공인IP/32"]
+
+# 반드시 채우세요: 테스트용 계정 8개(dev-general/dev-lead/dev-hr-backend/db-general/db-lead/ops-general/ops-lead/security-auditor) 공용 최초 비밀번호
+keycloak_test_users_password = "여기에_강력한_임시비밀번호_입력"
+
+# (선택) 기본값 t3.medium
+# keycloak_instance_type = "t3.medium"
+
+# --- CI/CD OIDC (ADR-006, 22-cicd-oidc.tf) ---
+# 반드시 채우세요: 이 인프라를 배포하는 GitHub organization/저장소 이름
+github_org  = "여기에_github_organization_또는_계정명"
+github_repo = "여기에_저장소_이름"
+
+# --- 보안 알림 파이프라인 (ADR-005, 23-security-alerting.tf) ---
+# 선택이지만, 안 채우면 Slack/PagerDuty 알림 리소스가 생성되지 않습니다
+# (SNS 토픽/EventBridge 규칙 자체는 만들어짐).
+# slack_workspace_id = "T0XXXXXXX"        # AWS Chatbot에 Slack 앱 설치 후 확인
+# slack_channel_id   = "C0XXXXXXX"        # #sec-alerts 채널 ID
+# pagerduty_integration_url = "https://events.pagerduty.com/integration/xxxxx/enqueue"
+
+# --- Automated Security Response on AWS (ADR-014, 27-asr-remediation.tf) ---
+# 기본값 false. 이 템플릿의 Web UI 구성요소가 계정의 Lambda 동시실행 할당량을
+# 초과 요구할 수 있어(신규/제한된 계정에서 흔함), 할당량 증가가 확인되기 전까지는
+# false로 두고 나머지 인프라부터 배포하는 걸 권장.
+# enable_asr_remediation = true
+
+# 기본값(template_url)은 실제 검증된 진짜 URL입니다. 파라미터는 일부러 비워둬서
+# 템플릿 자체 기본값으로 배포됩니다 - 자세한 이유는 27-asr-remediation.tf 상단 주석 참고.
+# asr_template_url = "https://s3.amazonaws.com/solutions-reference/automated-security-response-on-aws/latest/automated-security-response-admin.template"
+
+# --- Security Lake (ADR-008/015, 19-security-lake.tf) ---
+# 기본값 false. 계정+리전당 데이터 레이크 1개만 가능한 리소스라, 이전에 실패한
+# 시도가 있었다면 AWS 쪽 정리가 끝난 뒤에 true로 켜는 걸 권장.
+# enable_security_lake = true
+
+# --- RDS 감사로그 WORM 보존기간 (ADR-008, 17-rds-audit-worm.tf) ---
+# 기본값 365일(ISMS-P 요구사항 기준, 실서비스용). S3 Object Lock 특성상 한번
+# 잠기면 이 기간 동안 계정 소유자 포함 누구도 못 지웁니다. 반복 테스트 중이라면
+# 최소값인 1로 낮춰서 쓰고, 최종 배포/보고서용으로는 꼭 365로 되돌리세요.
+# rds_audit_worm_retention_days = 1
+
+# --- RDS 권한 드리프트 체크 Lambda용 psycopg2 레이어 (30-rds-permission-drift-check.tf) ---
+# 기본값 "" 이라 terraform apply 자체는 통과하지만, 채우지 않으면 이 Lambda가
+# import 에러로 동작하지 않습니다. AWS 공식 Layer가 없어 커뮤니티 Layer를 쓰거나
+# 직접 빌드해야 합니다(리전/Python 버전에 맞는 Layer).
+# psycopg2_layer_arn = "여기에_psycopg2_lambda_layer_arn_입력"
+

@@ -1,0 +1,1568 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Tier 2 - Network & Edge Gateway Domain Operations Dashboard: ALB Detailed Health, Resets, NAT Gateway & EC2 Network Metrics (100% AWS CloudWatch)",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier1"
+        ],
+        "targetBlank": false,
+        "title": "Tier 1 Overview",
+        "type": "dashboards"
+      },
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier2"
+        ],
+        "targetBlank": false,
+        "title": "Tier 2 Dashboards",
+        "type": "dashboards"
+      },
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "tier3"
+        ],
+        "targetBlank": false,
+        "title": "Tier 3 Drill-Downs",
+        "type": "dashboards"
+      }
+    ],
+    "liveNow": false,
+    "panels": [
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 100,
+        "title": "🌐 1. AWS Application Load Balancer (ALB) Detailed Operations",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "id": 101,
+        "title": "🎯 Target Group Health Status",
+        "type": "bargauge",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "Target Group별 Healthy 및 UnHealthy Host 수 현황",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "max": 10,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Healthy Hosts"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "UnHealthy Hosts"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#e02f44",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "displayMode": "gradient",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showUnfilled": true,
+          "valueMode": "color"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m1",
+            "label": "Healthy Hosts",
+            "metricName": "HealthyHostCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*",
+              "TargetGroup": "*"
+            },
+            "id": "m2",
+            "label": "UnHealthy Hosts",
+            "metricName": "UnHealthyHostCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "id": 102,
+        "title": "🔌 Active & New Connection Counts",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "ALB에 수립된 동시 활성 커넥션 및 분당 신규 수립 커넥션 수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Active Connections"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#1890ff",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "New Connections"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#722ed1",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*"
+            },
+            "id": "m1",
+            "label": "Active Connections",
+            "metricName": "ActiveConnectionCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*"
+            },
+            "id": "m2",
+            "label": "New Connections",
+            "metricName": "NewConnectionCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "id": 103,
+        "title": "🗺️ Traffic Distribution by AZ",
+        "type": "piechart",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "가용 영역(AZ)별 ALB 요청 분산 비율",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": []
+        },
+        "options": {
+          "displayLabels": [
+            "name",
+            "percent"
+          ],
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true,
+            "values": [
+              "value",
+              "percent"
+            ]
+          },
+          "pieType": "donut",
+          "reduceOptions": {
+            "calcs": [
+              "sum"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "AvailabilityZone": "*",
+              "LoadBalancer": "*"
+            },
+            "id": "m1",
+            "label": "{{AvailabilityZone}}",
+            "metricName": "RequestCount",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        },
+        "id": 104,
+        "title": "⚠️ TCP Connection Resets (RST)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "클라이언트/타겟/ELB에 의해 강제 종료(RST)된 TCP 세션 수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#faad14",
+                  "value": 50
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 100
+                }
+              ]
+            },
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Client Resets"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#fa8c16",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Target Resets"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#f5222d",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "ELB Resets"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#eb2f96",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "sum",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*"
+            },
+            "id": "m1",
+            "label": "Client Resets",
+            "metricName": "TCP_Client_Reset_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*"
+            },
+            "id": "m2",
+            "label": "Target Resets",
+            "metricName": "TCP_Target_Reset_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "LoadBalancer": "*"
+            },
+            "id": "m3",
+            "label": "ELB Resets",
+            "metricName": "TCP_ELB_Reset_Count",
+            "namespace": "AWS/ApplicationELB",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "C",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": true,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 9
+        },
+        "id": 200,
+        "title": "⚡ 2. AWS NAT Gateway & Network Traffic (AWS/NATGateway)",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 10
+        },
+        "id": 201,
+        "title": "NAT Gateway Active Connections",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "NAT Gateway 동시 활성 커넥션 수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "NatGatewayId": "*"
+            },
+            "id": "m1",
+            "label": "Active Connections",
+            "metricName": "ActiveConnectionCount",
+            "namespace": "AWS/NATGateway",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 10
+        },
+        "id": 202,
+        "title": "NAT Gateway Bandwidth (Bytes In / Out)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "NAT Gateway 트래픽 송수신 대역폭",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "Bytes / sec",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "unit": "Bps",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "In from Destination"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "In from Source"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#1890ff",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "NatGatewayId": "*"
+            },
+            "id": "m1",
+            "metricName": "BytesInFromDestination",
+            "namespace": "AWS/NATGateway",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "NatGatewayId": "*"
+            },
+            "id": "m2",
+            "metricName": "BytesInFromSource",
+            "namespace": "AWS/NATGateway",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "NatGatewayId": "*"
+            },
+            "id": "m2",
+            "label": "In from Source",
+            "metricName": "BytesInFromSource",
+            "namespace": "AWS/NATGateway",
+            "period": "300",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 10
+        },
+        "id": 203,
+        "title": "NAT Gateway Dropped Packets & Error Port Allocations",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "NAT Gateway 패킷 손실(Drop) 및 포트 할당 실패 건수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Packets Drop"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#e02f44",
+                    "mode": "fixed"
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 3
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Error Port Allocation"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#faad14",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "sum",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "NatGatewayId": "*"
+            },
+            "id": "m1",
+            "label": "Packets Drop",
+            "metricName": "PacketsDropCount",
+            "namespace": "AWS/NATGateway",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "NatGatewayId": "*"
+            },
+            "id": "m2",
+            "label": "Error Port Allocation",
+            "metricName": "ErrorPortAllocation",
+            "namespace": "AWS/NATGateway",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 18
+        },
+        "id": 300,
+        "title": "🛡️ 3. Edge Host & Network Infrastructure (AWS/EC2)",
+        "type": "row",
+        "panels": []
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 0,
+          "y": 19
+        },
+        "id": 301,
+        "title": "EC2 Instances CPU Utilization (%)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "EC2 인스턴스 CPU 사용률",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "max": 100,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "#52c41a",
+                  "value": null
+                },
+                {
+                  "color": "#faad14",
+                  "value": 75
+                },
+                {
+                  "color": "#e02f44",
+                  "value": 90
+                }
+              ]
+            },
+            "unit": "percent",
+            "noValue": "0"
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m1",
+            "label": "{{InstanceId}}",
+            "metricName": "CPUUtilization",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 12,
+          "y": 19
+        },
+        "id": 302,
+        "title": "EC2 Instances Network Packets (In / Out)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "cloudwatch-default"
+        },
+        "description": "EC2 인스턴스 송수신 패킷 수",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [
+              {
+                "type": "special",
+                "options": {
+                  "match": "empty",
+                  "result": {
+                    "text": "0"
+                  }
+                }
+              }
+            ],
+            "unit": "pps",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Packets In"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#52c41a",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Packets Out"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "#1890ff",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "max",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m1",
+            "metricName": "NetworkPacketsIn",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "A",
+            "region": "${region}",
+            "statistic": "Sum",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m2",
+            "metricName": "NetworkPacketsOut",
+            "namespace": "AWS/EC2",
+            "period": "60",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          },
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "cloudwatch-default"
+            },
+            "dimensions": {
+              "InstanceId": "*"
+            },
+            "id": "m2",
+            "label": "Packets Out",
+            "metricName": "NetworkPacketsOut",
+            "namespace": "AWS/EC2",
+            "period": "300",
+            "queryMode": "Metrics",
+            "refId": "B",
+            "region": "${region}",
+            "statistic": "Average",
+            "matchExact": false,
+            "metricEditorMode": 0,
+            "metricQueryType": 0
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [
+      "tier2",
+      "network",
+      "cloudwatch",
+      "alb",
+      "natgw",
+      "ec2"
+    ],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": true,
+            "text": "dev",
+            "value": "dev"
+          },
+          "hide": 0,
+          "label": "Environment",
+          "name": "env",
+          "options": [
+            {
+              "selected": true,
+              "text": "dev",
+              "value": "dev"
+            },
+            {
+              "selected": false,
+              "text": "prod",
+              "value": "prod"
+            }
+          ],
+          "query": "dev, prod",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "ap-northeast-2",
+            "value": "ap-northeast-2"
+          },
+          "hide": 0,
+          "label": "Region",
+          "name": "region",
+          "options": [
+            {
+              "selected": true,
+              "text": "ap-northeast-2",
+              "value": "ap-northeast-2"
+            }
+          ],
+          "query": "ap-northeast-2",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "All",
+            "value": "*"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Availability Zone",
+          "multi": false,
+          "name": "az",
+          "options": [],
+          "query": "ap-northeast-2a, ap-northeast-2c",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "timezone": "browser",
+    "title": "[T2] Network - ALB & Edge Gateway",
+    "uid": "tier2-network-edge",
+    "version": 5
+  },
+  "overwrite": true
+}

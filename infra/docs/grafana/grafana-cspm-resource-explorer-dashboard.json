@@ -1,0 +1,221 @@
+{
+  "dashboard": {
+    "title": "CSPM 자원별 Finding 탐색기 (Resource Explorer)",
+    "uid": "cspm-resource-explorer",
+    "tags": ["cspm", "security-hub", "resource-explorer"],
+    "timezone": "browser",
+    "editable": true,
+    "refresh": "1m",
+    "time": { "from": "now-30d", "to": "now" },
+    "schemaVersion": 39,
+    "version": 2,
+    "templating": {
+      "list": [
+        {
+          "name": "manual_resource",
+          "label": "수동 억제 자원 (Slack)",
+          "type": "query",
+          "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+          "definition": "SELECT DISTINCT resource_arn FROM (SELECT finding_info.uid as uid, resource.uid as resource_arn, status, unmapped['Note.UpdatedBy'] as suppressed_by, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) WHERE rn = 1 AND status = 'Suppressed' AND suppressed_by IS NOT NULL AND suppressed_by NOT LIKE 'automation-rule-%' AND suppressed_by != 'terraform-managed-risk-acceptance' ORDER BY 1",
+          "query": {
+            "rawSQL": "SELECT DISTINCT resource_arn FROM (SELECT finding_info.uid as uid, resource.uid as resource_arn, status, unmapped['Note.UpdatedBy'] as suppressed_by, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) WHERE rn = 1 AND status = 'Suppressed' AND suppressed_by IS NOT NULL AND suppressed_by NOT LIKE 'automation-rule-%' AND suppressed_by != 'terraform-managed-risk-acceptance' ORDER BY 1",
+            "format": "table",
+            "connectionArgs": {
+              "catalog": "AwsDataCatalog",
+              "database": "amazon_security_lake_glue_db_ap_northeast_2",
+              "region": "ap-northeast-2"
+            }
+          },
+          "refresh": 2,
+          "regex": "",
+          "sort": 1,
+          "multi": false,
+          "includeAll": false,
+          "current": {}
+        },
+        {
+          "name": "auto_resource",
+          "label": "자동 억제 자원 (Tag/Rule)",
+          "type": "query",
+          "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+          "definition": "SELECT DISTINCT resource_arn FROM (SELECT finding_info.uid as uid, resource.uid as resource_arn, status, unmapped['Note.UpdatedBy'] as suppressed_by, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) WHERE rn = 1 AND status = 'Suppressed' AND suppressed_by LIKE 'automation-rule-%' ORDER BY 1",
+          "query": {
+            "rawSQL": "SELECT DISTINCT resource_arn FROM (SELECT finding_info.uid as uid, resource.uid as resource_arn, status, unmapped['Note.UpdatedBy'] as suppressed_by, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) WHERE rn = 1 AND status = 'Suppressed' AND suppressed_by LIKE 'automation-rule-%' ORDER BY 1",
+            "format": "table",
+            "connectionArgs": {
+              "catalog": "AwsDataCatalog",
+              "database": "amazon_security_lake_glue_db_ap_northeast_2",
+              "region": "ap-northeast-2"
+            }
+          },
+          "refresh": 2,
+          "regex": "",
+          "sort": 1,
+          "multi": false,
+          "includeAll": false,
+          "current": {}
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "영역 A. 수동 예외 처리 (Slack 승인 기반 거버넌스)",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 2,
+        "title": "🙋 수동 억제 리소스 요약",
+        "description": "사람이 직접 Slack 모달로 예외 승인한 자원 목록 - 자원 하나당 한 행(승인자, 만료 예정일, 총 수동 억제 건수). CloudWatch Logs(/aws/cspm/exception-records)가 소스라 이 플로우로 등록된 것만 정확히 잡힌다(자동 억제/구버전 스크립트 안 섞임). 만료 예정일은 그 자원에 exception이 여러 건이면 가장 최근 등록 건 기준(정확한 최솟값은 CWLI가 문자열 필드 min()을 지원 안 해서 근사치).",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 1, "w": 24, "h": 8 },
+        "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "cloudwatch", "uid": "efuxh2y9eqi2od" },
+            "region": "ap-northeast-2",
+            "queryMode": "Logs",
+            "logGroups": [
+              {
+                "accountId": "123456789012",
+                "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/cspm/exception-records:*",
+                "name": "/aws/cspm/exception-records"
+              }
+            ],
+            "expression": "fields eventType, resourceId, approvedBy, reviewDate\n| filter eventType = 'CSPM_EXCEPTION_RECORDED'\n| stats count(*) as `총_수동억제`, latest(approvedBy) as `승인자`, latest(reviewDate) as `만료_예정일` by resourceId\n| sort `만료_예정일` asc",
+            "queryString": "fields eventType, resourceId, approvedBy, reviewDate\n| filter eventType = 'CSPM_EXCEPTION_RECORDED'\n| stats count(*) as `총_수동억제`, latest(approvedBy) as `승인자`, latest(reviewDate) as `만료_예정일` by resourceId\n| sort `만료_예정일` asc",
+            "statsGroups": []
+          }
+        ],
+        "options": { "showHeader": true }
+      },
+      {
+        "id": 3,
+        "title": "🔍 수동 억제 자원의 미조치 Finding 상세",
+        "description": "상단 '수동 억제 자원' 변수에서 고른 자원에 아직 남아있는 미조치(NEW) finding 목록. 같은 자원이라도 사람이 승인한 건 하나뿐이고 나머지 컨트롤은 그대로 미조치 상태로 남아있을 수 있다 - 그걸 보여준다.",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 9, "w": 24, "h": 8 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": {
+              "catalog": "AwsDataCatalog",
+              "database": "amazon_security_lake_glue_db_ap_northeast_2",
+              "region": "ap-northeast-2"
+            },
+            "format": "table",
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, finding_info.title as title, severity, status, time_dt, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0 WHERE resource.uid = '$manual_resource') SELECT title as \"제목\", severity as \"심각도\", status as \"상태\", time_dt as \"최종갱신\" FROM latest WHERE rn = 1 AND status = 'New' ORDER BY severity DESC, \"최종갱신\" DESC"
+          }
+        ],
+        "options": { "showHeader": true },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "심각도" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" } },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "Critical": { "color": "dark-red" },
+                        "High": { "color": "red" },
+                        "Medium": { "color": "orange" }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 4,
+        "title": "영역 B. 자동 예외 처리 (Tag 기반 정책 자동화)",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 17, "w": 24, "h": 1 },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 5,
+        "title": "🏷️ 자동 억제 리소스 요약",
+        "description": "Automation Rule(46-cspm-automation-rules.tf)이 자동으로 예외 처리한 자원 목록 - 자원 하나당 한 행(감지된 태그, 적용된 규칙명, 총 자동 억제 건수). 한 자원이 dev 태그 규칙과 known-accepted-risks 규칙 둘 다에 걸릴 수 있어 규칙명이 여러 개로 표시될 수 있다.",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 18, "w": 24, "h": 8 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": {
+              "catalog": "AwsDataCatalog",
+              "database": "amazon_security_lake_glue_db_ap_northeast_2",
+              "region": "ap-northeast-2"
+            },
+            "format": "table",
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, resource.uid as resource_arn, resource.labels as labels, status, unmapped['Note.UpdatedBy'] as suppressed_by, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT resource_arn as \"리소스\", arbitrary(array_join(labels, ', ')) as \"감지된_태그\", array_join(array_distinct(array_agg(suppressed_by)), ', ') as \"자동억제_규칙명\", count(*) as \"총_자동억제_수\" FROM latest WHERE rn = 1 AND status = 'Suppressed' AND suppressed_by LIKE 'automation-rule-%' GROUP BY resource_arn ORDER BY \"총_자동억제_수\" DESC LIMIT 100"
+          }
+        ],
+        "options": { "showHeader": true, "sortBy": [{ "displayName": "총_자동억제_수", "desc": true }] }
+      },
+      {
+        "id": 6,
+        "title": "🔍 자동 억제 자원의 미조치 Finding 상세",
+        "description": "상단 '자동 억제 자원' 변수에서 고른 자원에서, 태그/규칙으로 억제되지 않고 아직 살아있는 미조치(NEW) finding 목록 - 심각도 높은 순으로 정렬해서 진짜 위험한 게 dev 태그 뒤에 숨어있지 않은지 확인할 수 있다.",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 26, "w": 24, "h": 8 },
+        "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "grafana-athena-datasource", "uid": "ffuxh6qmezlz4a" },
+            "connectionArgs": {
+              "catalog": "AwsDataCatalog",
+              "database": "amazon_security_lake_glue_db_ap_northeast_2",
+              "region": "ap-northeast-2"
+            },
+            "format": "table",
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, finding_info.title as title, severity, status, time_dt, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0 WHERE resource.uid = '$auto_resource') SELECT title as \"제목\", severity as \"심각도\", status as \"상태\", time_dt as \"최종갱신\" FROM latest WHERE rn = 1 AND status = 'New' ORDER BY severity DESC, \"최종갱신\" DESC"
+          }
+        ],
+        "options": { "showHeader": true },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "심각도" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" } },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "Critical": { "color": "dark-red" },
+                        "High": { "color": "red" },
+                        "Medium": { "color": "orange" }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}

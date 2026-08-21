@@ -1,0 +1,583 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 6,
+    "links": [],
+    "panels": [
+      {
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "efuxh2y9eqi2od"
+        },
+        "description": "Slack 모달 제출 즉시 CloudWatch로 유입되는 실시간 예외/위험 수용 승인 내역 (/aws/cspm/exception-records)",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Reason_Type"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "mode": "basic",
+                    "type": "color-background"
+                  }
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "Business Requirement": {
+                          "color": "purple",
+                          "text": "비즈니스 필요"
+                        },
+                        "Compensating Control": {
+                          "color": "blue",
+                          "text": "보완 통제 적용"
+                        },
+                        "False Positive": {
+                          "color": "green",
+                          "text": "오탐 (False Positive)"
+                        },
+                        "Risk Accepted": {
+                          "color": "orange",
+                          "text": "위험 수용"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 16,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": [
+            {
+              "desc": true,
+              "displayName": "@timestamp"
+            }
+          ]
+        },
+        "pluginVersion": "10.4.7",
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "efuxh2y9eqi2od"
+            },
+            "dimensions": {},
+            "expression": "fields @timestamp, ticketRef as Ticket, approvedBy as Approver, resourceId as Target_Resource, reasonType as Reason_Type, reviewDate as Review_Date, rationale as Justification\n| filter eventType = 'CSPM_EXCEPTION_RECORDED'\n| sort @timestamp desc\n| limit 20",
+            "hide": false,
+            "id": "",
+            "label": "",
+            "logGroups": [
+              {
+                "accountId": "123456789012",
+                "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/cspm/exception-records:*",
+                "name": "/aws/cspm/exception-records"
+              }
+            ],
+            "matchExact": true,
+            "metricEditorMode": 1,
+            "metricName": "",
+            "metricQueryType": 0,
+            "namespace": "",
+            "period": "",
+            "queryMode": "Logs",
+            "queryString": "fields @timestamp, ticketRef as Ticket, approvedBy as Approver, resourceId as Target_Resource, reasonType as Reason_Type, reviewDate as Review_Date, rationale as Justification\n| filter eventType = 'CSPM_EXCEPTION_RECORDED'\n| sort @timestamp desc\n| limit 20",
+            "refId": "A",
+            "region": "ap-northeast-2",
+            "sqlExpression": "",
+            "statistic": "Average",
+            "statsGroups": []
+          }
+        ],
+        "title": "⚡ [실시간] Slack CSPM 취약점 예외 등록 감사 내역",
+        "type": "table"
+      },
+      {
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "efuxh2y9eqi2od"
+        },
+        "description": "Slack을 통해 승인된 예외 유형 통계",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 0
+        },
+        "id": 2,
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true,
+            "values": [
+              "value",
+              "percent"
+            ]
+          },
+          "pieType": "pie",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "efuxh2y9eqi2od"
+            },
+            "expression": "fields reasonType | filter eventType = 'CSPM_EXCEPTION_RECORDED' | stats count(*) as count by reasonType",
+            "logGroups": [
+              {
+                "accountId": "123456789012",
+                "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/cspm/exception-records:*",
+                "name": "/aws/cspm/exception-records"
+              }
+            ],
+            "queryMode": "Logs",
+            "queryString": "fields reasonType | filter eventType = 'CSPM_EXCEPTION_RECORDED' | stats count(*) as count by reasonType",
+            "refId": "A",
+            "region": "ap-northeast-2",
+            "statsGroups": [
+              "reasonType"
+            ]
+          }
+        ],
+        "title": "📊 CSPM 예외 등록 사유 분포",
+        "type": "piechart"
+      },
+      {
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "efuxh2y9eqi2od"
+        },
+        "description": "Slack으로 알림 카드가 발송되었으나 아직 모달에서 예외 등록(Suppress)하지 않은 실시간 미해결 취약점 큐",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "dark-red",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Severity"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "mode": "basic",
+                    "type": "color-background"
+                  }
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "CRITICAL": {
+                          "color": "dark-red",
+                          "text": "CRITICAL"
+                        },
+                        "HIGH": {
+                          "color": "orange",
+                          "text": "HIGH"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "id": 3,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": [
+            {
+              "desc": true,
+              "displayName": "@timestamp"
+            }
+          ]
+        },
+        "pluginVersion": "10.4.7",
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "efuxh2y9eqi2od"
+            },
+            "dimensions": {},
+            "expression": "fields @timestamp, eventType, severity, resourceId, title, actor, findingId\n| filter eventType in ['CSPM_ALERT_SENT', 'CSPM_EXCEPTION_RECORDED']\n| stats latest(eventType) as latestEventType, latest(@timestamp) as Latest_Time, latest(severity) as Severity, latest(resourceId) as Target_Resource, latest(title) as Title, latest(actor) as Actor by findingId\n| filter latestEventType = 'CSPM_ALERT_SENT'\n| sort Latest_Time desc\n| limit 50",
+            "hide": false,
+            "id": "",
+            "label": "",
+            "logGroups": [
+              {
+                "accountId": "123456789012",
+                "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/cspm/exception-records:*",
+                "name": "/aws/cspm/exception-records"
+              }
+            ],
+            "matchExact": true,
+            "metricEditorMode": 1,
+            "metricName": "",
+            "metricQueryType": 0,
+            "namespace": "",
+            "period": "",
+            "queryMode": "Logs",
+            "queryString": "fields @timestamp, eventType, severity, resourceId, title, actor, findingId\n| filter eventType in ['CSPM_ALERT_SENT', 'CSPM_EXCEPTION_RECORDED']\n| stats latest(eventType) as latestEventType, latest(@timestamp) as Latest_Time, latest(severity) as Severity, latest(resourceId) as Target_Resource, latest(title) as Title, latest(actor) as Actor by findingId\n| filter latestEventType = 'CSPM_ALERT_SENT'\n| sort Latest_Time desc\n| limit 50",
+            "refId": "A",
+            "region": "ap-northeast-2",
+            "sqlExpression": "",
+            "statistic": "Average",
+            "statsGroups": []
+          }
+        ],
+        "title": "🔴 [미해결] Slack 발송된 미조치 취약점 알림 큐 (Unresolved)",
+        "type": "table"
+      },
+      {
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "efuxh2y9eqi2od"
+        },
+        "description": "재검토일(Review Date) 도래 항목 관리 대장 (리소스 삭제/조치 완료 시 동기화 Lambda에 의해 자동 제외)",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Review_Date"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "mode": "basic",
+                    "type": "color-background"
+                  }
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "id": 4,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": [
+            {
+              "desc": false,
+              "displayName": "Review_Date"
+            }
+          ]
+        },
+        "pluginVersion": "10.4.7",
+        "targets": [
+          {
+            "datasource": {
+              "type": "cloudwatch",
+              "uid": "efuxh2y9eqi2od"
+            },
+            "dimensions": {},
+            "expression": "fields eventType, findingId, reviewDate, daysRemaining, ticketRef, resourceId, approvedBy, reasonType, rationale\n| filter eventType in ['CSPM_EXCEPTION_DUE_SOON', 'CSPM_EXCEPTION_CLOSED']\n| stats latest(eventType) as latestEventType, latest(reviewDate) as Review_Date, latest(daysRemaining) as Days_Remaining, latest(ticketRef) as Ticket, latest(resourceId) as Target_Resource, latest(approvedBy) as Approver, latest(reasonType) as Reason_Type, latest(rationale) as Justification by findingId\n| filter latestEventType = 'CSPM_EXCEPTION_DUE_SOON'\n| sort Review_Date asc\n| limit 50",
+            "hide": false,
+            "id": "",
+            "label": "",
+            "logGroups": [
+              {
+                "accountId": "123456789012",
+                "arn": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/cspm/exception-records:*",
+                "name": "/aws/cspm/exception-records"
+              }
+            ],
+            "matchExact": true,
+            "metricEditorMode": 1,
+            "metricName": "",
+            "metricQueryType": 0,
+            "namespace": "",
+            "period": "",
+            "queryMode": "Logs",
+            "queryString": "fields eventType, findingId, reviewDate, daysRemaining, ticketRef, resourceId, approvedBy, reasonType, rationale\n| filter eventType in ['CSPM_EXCEPTION_DUE_SOON', 'CSPM_EXCEPTION_CLOSED']\n| stats latest(eventType) as latestEventType, latest(reviewDate) as Review_Date, latest(daysRemaining) as Days_Remaining, latest(ticketRef) as Ticket, latest(resourceId) as Target_Resource, latest(approvedBy) as Approver, latest(reasonType) as Reason_Type, latest(rationale) as Justification by findingId\n| filter latestEventType = 'CSPM_EXCEPTION_DUE_SOON'\n| sort Review_Date asc\n| limit 50",
+            "refId": "A",
+            "region": "ap-northeast-2",
+            "sqlExpression": "",
+            "statistic": "Average",
+            "statsGroups": []
+          }
+        ],
+        "title": "🚨 [만료 관리] 재검토일(Review Date) 관리 대장 (Action Items)",
+        "type": "table"
+      },
+      {
+        "id": 100,
+        "title": "🏷️ 태그/규칙 기반 자동 억제 이력 (Automation Rules)",
+        "description": "46-cspm-automation-rules.tf의 Automation Rule이 Security Hub 파이프라인 안에서 즉시 억제한 finding들 - Lambda를 아예 거치지 않아 CloudWatch Logs (위 4개 패널의 소스)엔 흔적이 안 남는다. Security Lake(OCSF)의 원본 Note.UpdatedBy로 automation-rule-* 태그가 붙은 것만 골라서 보여준다. '명시적 억제 태그' 규칙은 Environment=suppresstag가 리소스에 개별적으로 붙어있어야만 걸린다(전체 계정에 깔린 Environment=dev와는 분리됨 - HIGH 심각도 finding까지 광범위하게 묻히는 문제가 있어서 좁혔음). Slack 모달로 사람이 수동 승인한 예외(Note.UpdatedBy가 Slack 사용자명)는 여기 안 잡히고, 위 '실시간 예외 등록 감사 내역' 패널에 따로 뜬다.",
+        "type": "table",
+        "gridPos": {
+          "x": 0,
+          "y": 16,
+          "w": 24,
+          "h": 8
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "ffuxh6qmezlz4a"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-athena-datasource",
+              "uid": "ffuxh6qmezlz4a"
+            },
+            "connectionArgs": {
+              "catalog": "AwsDataCatalog",
+              "database": "amazon_security_lake_glue_db_ap_northeast_2",
+              "region": "ap-northeast-2"
+            },
+            "rawSQL": "WITH latest AS (SELECT finding_info.uid as uid, finding_info.title as title, severity, status, resource.type as resource_type, resource.labels as labels, unmapped['Note.UpdatedBy'] as suppressed_by, unmapped['Note.UpdatedAt'] as suppressed_at, time_dt, ROW_NUMBER() OVER (PARTITION BY finding_info.uid ORDER BY time_dt DESC) as rn FROM amazon_security_lake_table_ap_northeast_2_sh_findings_2_0) SELECT title, resource_type, severity, suppressed_by, suppressed_at, array_join(labels, ', ') as tags FROM latest WHERE rn = 1 AND status = 'Suppressed' AND suppressed_by LIKE 'automation-rule-%' ORDER BY suppressed_at DESC LIMIT 50",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "sortBy": [
+            {
+              "displayName": "suppressed_at",
+              "desc": true
+            }
+          ]
+        },
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "suppressed_by"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "type": "color-background",
+                    "mode": "basic"
+                  }
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "automation-rule-suppress-dev-tagged": {
+                          "color": "blue",
+                          "text": "🏷️ 명시적 억제 태그(suppresstag)"
+                        },
+                        "automation-rule-suppress-known-accepted-risks": {
+                          "color": "purple",
+                          "text": "📋 기존 위험수용 재발 자동억제"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "refresh": "5s",
+    "schemaVersion": 39,
+    "tags": [
+      "cspm",
+      "slack",
+      "soc"
+    ],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-30d",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "CSPM 실시간 예외 승인 및 만료 관제 대시보드",
+    "uid": "cspm-interactive-soc",
+    "version": 1,
+    "weekStart": ""
+  },
+  "overwrite": true
+}

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rds-credentials
+  namespace: employee-backend
+type: Opaque
+stringData:
+  DB_HOST: "${DB_HOST}"
+  DB_PORT: "5432"
+  DB_NAME: "demodb"
+  DB_USER: "adminuser"
+  DB_PASSWORD: "${DB_PASSWORD}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hr-system-config
+  namespace: employee-backend
+data:
+  POMERIUM_JWKS_URL: "https://${POMERIUM_PRIVATE_IP}/.well-known/pomerium/jwks.json"

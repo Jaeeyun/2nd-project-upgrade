@@ -1,0 +1,27 @@
+# 실제 값이 들어가는 변수 파일 - 절대 커밋 금지(개인정보/비밀번호/IP 등 포함)
+terraform.tfvars
+*.tfvars
+!terraform.tfvars.example
+*.tfvars.json
+
+# Terraform 상태 파일 - 리소스 ID/ARN/일부 속성값이 평문으로 들어있어 민감함
+terraform.tfstate
+terraform.tfstate.*
+*.tfstate.backup
+
+# terraform init이 받는 프로바이더 바이너리 - 용량 크고 재생성 가능(커밋 불필요)
+.terraform/
+
+# terraform plan 결과물 - 상태와 마찬가지로 민감한 값을 담을 수 있음
+*.tfplan
+crash.log
+crash.*.log
+
+# 로컬 오버라이드(각자 환경용, 공유 저장소에 올릴 필요 없음)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# 스크립트 실행 중 생성되는 빌드 산출물
+.build/
