@@ -43,47 +43,8 @@ AWS 위에 HR 서비스(직원/급여 정보)를 얹고, 그 위에 **Zero Trust
 
 두 개의 VPC를 Peering으로 연결해 "온프레미스 격(Keycloak/Pomerium VPC)"과 "AWS 워크로드 VPC(HR 서비스)"의 경계를 실습 환경에서도 의미 있게 나눴습니다.
 
-```mermaid
-flowchart TB
-    Browser(("사용자 브라우저"))
+<img width="742" height="752" alt="아키텍쳐" src="https://github.com/user-attachments/assets/44aead95-906c-492a-a692-cf815aed6fea" />
 
-    subgraph KCVPC["Keycloak VPC — 10.1.0.0/16"]
-        direction TB
-        subgraph KCPub["퍼블릭 서브넷 (10.1.1.0/24)"]
-            KCALB["Keycloak ALB"]
-            Pom["Pomerium EC2<br/>(Identity-Aware Proxy)"]
-        end
-        subgraph KCPriv["프라이빗 서브넷 (10.1.2.0/24)"]
-            KCInst["Keycloak EC2<br/>퍼블릭 IP 없음"]
-        end
-        VPCE[["VPC 엔드포인트<br/>ECR · SSM · S3"]]
-    end
-
-    subgraph DemoVPC["Workload VPC — 10.0.0.0/16"]
-        direction TB
-        subgraph DPub["퍼블릭 서브넷"]
-            NAT["NAT Gateway"]
-        end
-        subgraph DApp["프라이빗 앱 서브넷"]
-            MTLS["내부 mTLS ALB"]
-            EKS["EKS 클러스터<br/>(HR/Employee 서비스)"]
-            Lambdas["세션강제종료 등 Lambda"]
-        end
-        subgraph DDB["프라이빗 DB 서브넷"]
-            RDS[("RDS PostgreSQL<br/>+ pgaudit WORM")]
-        end
-    end
-
-    Browser -->|"HTTPS · admin CIDR만"| KCALB
-    Browser -->|"HTTPS · admin CIDR만"| Pom
-    KCALB -->|"SG-to-SG"| KCInst
-    KCInst -.->|"PrivateLink"| VPCE
-    Pom -->|"mTLS client cert"| MTLS
-    MTLS --> EKS --> RDS
-    Lambdas -->|"Peering"| KCInst
-
-    KCVPC <-.->|"VPC Peering + DNS 해석"| DemoVPC
-```
 
 ### 계층별 방어선
 
