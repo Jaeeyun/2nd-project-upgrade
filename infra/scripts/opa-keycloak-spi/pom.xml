@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ADR-022: 로그인 컨텍스트 게이트(SPI) 빌드 설정.
+
+  Keycloak SPI는 Keycloak 서버 자체가 제공하는 클래스(keycloak-server-spi 등)에
+  링크되므로 전부 provided 스코프다 - 이 jar엔 그 클래스들을 담지 않고,
+  런타임에 Keycloak 컨테이너 안의 클래스로더가 채워준다. Jackson도 Keycloak이
+  이미 클래스패스에 갖고 있어 provided로 둔다(버전은 26.7.0 배포판 기준 -
+  다른 Keycloak 버전을 쓰면 실제 번들된 Jackson 버전을 다시 맞춰야 한다).
+
+  빌드: mvn -q package  (target/opa-context-authenticator-1.0.0.jar 생성)
+
+  검증 완료: Maven 3.9.9 + JDK 21로 `mvn clean package` 실제 빌드 성공(2026-09
+  기준 Maven Central에 keycloak.version=26.7.0 아티팩트가 실재함을 확인).
+  산출물 jar 안에 OpaContextAuthenticator(Factory).class 2개와
+  META-INF/services/org.keycloak.authentication.AuthenticatorFactory가
+  정상적으로 들어있는 것까지 unzip -l로 확인함.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.ztplatform</groupId>
+  <artifactId>opa-context-authenticator</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- mirror-keycloak-image-to-ecr.sh/keycloak-bootstrap.sh.tpl의 이미지 태그(26.7.0)와
+         맞춘 값 - [검증 필요] quay.io 컨테이너 이미지 태그와 Maven Central의
+         org.keycloak 아티팩트 버전이 실제로 정확히 이 문자열로 일치하는지는
+         빌드해보기 전엔 확신 못 한다(불일치하면 mvn package가 의존성을 못 찾고
+         바로 실패하므로 빌드 시점에 바로 드러남 - 그 경우 이 값을 Maven
+         Central에서 실제 존재하는 가장 가까운 26.x 버전으로 바꿀 것). -->
+    <keycloak.version>26.7.0</keycloak.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi-private</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-services</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.17.2</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>opa-context-authenticator-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
